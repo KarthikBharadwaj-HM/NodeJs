@@ -20,14 +20,36 @@ connection.on("connected", () => {
   console.log("connected customers DB");
 });
 
-router.get("/", async (req, res) => {
-  try {
-    const result = await customers.find({});
-    if (result) {
+connection.on("error", (err) => {
+  console.log(`Database error ${err}`);
+});
+
+router.route("/").get(async (req, res) => {
+  if (req.query.page) {
+    try {
+      const page = req.query.page || 0;
+      const maxBooksPerPage = 3;
+      const pagination = {
+        skip: page * maxBooksPerPage,
+        limit: maxBooksPerPage,
+      };
+
+      const result = await customers
+        .find({}, "name address", pagination)
+        .exec();
       res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ error });
     }
-  } catch (error) {
-    res.status(500).json({ error });
+  } else {
+    try {
+      const result = await customers.find({});
+      if (result) {
+        res.status(200).json(result);
+      }
+    } catch (error) {
+      res.status(500).json({ error });
+    }
   }
 });
 
